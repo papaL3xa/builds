@@ -1,0 +1,14 @@
+####################################
+#  system.prop for StardustKernel  #
+####################################
+
+# Fake Encryption State to Encrypted
+ro.crypto.state=encrypted
+
+# Quick Boot 
+ro.config.hw_quickpoweron=true
+
+# GPU Vulkan Capable
+debug.composition.type=gpu
+
+# End of File
