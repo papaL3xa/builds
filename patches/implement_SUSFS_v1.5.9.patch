@@ -13,7 +13,7 @@ Co-authored-by: simonpunk <simonpunk2016@gmail.com>
 ---
  fs/Makefile                 |    2 +
  
- 1 files changed, 2 insertions(+), 0 deletions(-)
+ 1 files changed, 2 insertions(+)
 
 diff --git a/fs/Makefile b/fs/Makefile
 index 08fe716e5..fa7ed28b3 100755
