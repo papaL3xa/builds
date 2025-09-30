@@ -2,7 +2,7 @@ if is_substring("G970", getprop("ro.boot.bootloader")) || is_substring("G973", g
 	ui_print(" ");
 	ui_print("-- Starting Zip Installer...");
 else
-    abort("-- This Device is Not Supported! This Kernel Only Supports N970, N971, N975, N976 F/N");
+    abort("-- This Device is Not Supported! This Kernel Only Supports G970, G971, G975, G976, N970, N971, N975, N976 F/N");
 endif;
 
 ui_print(" ");
