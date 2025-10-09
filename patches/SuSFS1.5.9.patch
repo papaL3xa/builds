@@ -4312,7 +4312,7 @@ index 000000000000..de67737e0293
 +#ifndef KSU_SUSFS_DEF_H
 +#define KSU_SUSFS_DEF_H
 +
-+#include <linux/bits.h>
++/*#include <linux/bits.h>*/
 +
 +/********/
 +/* ENUM */
