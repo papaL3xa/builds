@@ -1,11 +1,12 @@
 id=BatAxeKernel-exynos9820
 name=BatAxeKernel Addons for Exynos 9820/9825
-version=v1.0
+version=v2.0
 versionCode=1
 author=BatAxeKernel
 banner=https://raw.githubusercontent.com/papaL3xa/builds/exynos9820/BatAxeBanner.png
 
-description=Addons system.prop for BatAxeKernel Exynos 9820/9825 Devices (Quick Boot, GPU Vulkan Capable)
+description=Addons system.prop for BatAxeKernel Exynos 9820/9825 Devices (Touch, Quick Boot, GPU Vulkan Capable)
+
 
 
 
