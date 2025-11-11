@@ -11,4 +11,300 @@ ro.config.hw_quickpoweron=true
 # GPU Vulkan Capable
 debug.composition.type=gpu
 
+####################################
+#  Touch Optimation for BatAxeKernel  #
+####################################
+
+# This file will be read by resetprop
+
+# Optimasi touch & input system
+debug.sf.set_touch_timer_ms=1
+debug.input.dispatch_latency_ms=0
+debug.input.sampling_rate=144
+debug.egl.swapinterval=1
+
+# Kurva respons sentuhan lebih agresif (-8 artinya makin responsif)
+persist.sys.touch.response_curve=-8
+persist.sys.touch.latency_shield=0
+persist.sys.touch.sample_rate=1440
+persist.sys.touch_predictive_engine=quantum
+persist.sys.multi_touch_anticipation=true
+persist.sys.zero_input_delay=enabled
+persist.sys.game.aim_lock_precision=1
+persist.sys.game.recoil_balance_stabilizer=1
+
+#V27.0
+# FASTER TOUCH TWEAKS
+# SENSITIVITAS SENTUH DASAR
+persist.sys.tap_duration_threshold=100
+persist.sys.touch_blocking_period=100
+debug.sf.high_speed_scroll_factor=500
+touch.input_boost_enabled=1
+touch.boost=1
+
+# MULTI-TOUCH & SAMPLING
+persist.sys.multi_sampling_enabled=1
+persist.sys.multi_touch_enabled=1
+persist.sys.touchSamplingToggle=1
+persist.sys.sampling_interval_in_seconds=1
+persist.sys.touch_off_enabled=0
+
+# TOUCH INPUT OPTIMIZATION
+persist.device_config.input_native.com.android.hardware.input.touch_resampling_enabled=true
+persist.device_config.input_native.com.android.hardware.input.touch_prediction_enabled=true
+persist.device_config.input_native.com.android.hardware.input.gesture_sampling_interval=5
+persist.device_config.input_native.com.android.hardware.input.event_sample_rate=2000
+persist.device_config.input_native.com.android.hardware.input.pointer_resampling_filter_enabled=false
+persist.device_config.input_native.com.android.hardware.input.touch_sampling_rate=144
+
+# DISPLAY & REFRESH RATE CONTROL
+persist.device_config.display_manager.refresh_rate_mode=1
+persist.device_config.display_manager.peak_refresh_rate=144
+persist.device_config.window_manager.enable_high_refresh_rate=true
+persist.device_config.window_manager.max_refresh_rate=144
+persist.device_config.window_manager.min_refresh_rate=144
+
+# GPU RENDERING & VSYNC
+persist.device_config.gpu_composition.force_gpu_rendering=true
+persist.device_config.gpu_composition.disable_hw_vsync=true
+
+# UI THREAD BOOST
+persist.device_config.aicore.AicCommon__ui_thread_priority_boost=true
+
+# AdServices
+persist.device_config.adservices.custom_error_code_sampling_enabled=true
+persist.device_config.adservices.measurement_throw_unknown_exception_sampling_rate=0.5
+
+# V25BOOST BRUTAL SEMPLING RATE - Touch Optimization Tweak
+debug.perf_event_max_sample_rate=1000000
+debug.touchscreen.latency.scale=0.5
+debug.tracing.block_touch_buffer=0
+dev.pm.dyn_samplingrate=0
+dev.pm.dyn_sample_period=1000000
+debug.sf.luma_sampling=1
+debug.sf.layer_smoothness=0
+debug.sf.default_touch_timer_ms=300
+debug.sf.set_touch_timer_ms=1
+debug.sf.region_sampling_timer_timeout_ns=1000000
+debug.sf.region_sampling_period_ns=1000000
+debug.sf.scroll_boost_refreshrate=240
+debug.sf.touch_boost_refreshrate=240
+
+# Meningkatkan Sampling Rate Sentuhan
+ro.input.sampling_rate=1000
+persist.sys.touch.sampling_boost=1
+persist.sys.display_high_refresh_rate=true
+persist.vendor.display.use_smooth_motion=true
+
+# Mengurangi Input Lag
+ro.input.delay=0
+ro.input.resampling=1
+ro.input.gesture_prediction=0
+ro.input.touch_boost=1
+
+# Optimasi Tekanan & Latency Sentuhan
+touch.pressure.scale=0.01
+ro.min.touch.major=0
+ro.min.touch.minor=0
+persist.sys.touch.boost=true
+persist.sys.touch.responsive=1
+
+#20Touch Responsive New
+ro.surface_flinger.set_idle_timer_ms=0
+ro.surface_flinger.set_touch_timer_ms=0
+ro.surface_flinger.set_display_power_timer_ms=0
+debug.sf.latch_unsignaled=1
+debug.sf.disable_backpressure=1
+debug.sf.multithreaded_present=true
+ro.surface_flinger.use_context_priority=1
+
+#V19 Touch settings optimization
+ro.touch.sampling_rate=120
+ro.touch.size_calibration=geometric
+ro.touch.stats.min=1
+ro.touch.stats.max=1
+ro.touchX.debuggable=1
+ro.touch.boost_threshold=5
+ro.touch.feature_gamemode_enable=1
+ro.touch.input_sensitivity=1
+ro.touch.rate_control=0
+ro.touch.response_rate=1
+ro.touch.sampling_rate_override=1
+ro.touch.sensitivity=1.2
+ro.touch.slop=8
+ro.touch.switch_set_touchscreen=14005
+ro.touch.tap_sensitivity=1
+ro.touchpanel.game_switch_enable=1
+
+#V18
+ro.surface_flinger.start_graphics_allocator_service=true
+ro.surface_flinger.running_without_sync_framework=true
+debug.sf.enable_hwc_vds=0
+debug.sf.hw 0
+debug.sf.predict_hwc_composition_strategy=0
+
+#V17 Screen.Touch
+debug.sf.treat_170m_as_sRGB=1
+debug.sf.earlyGl.app.duration=16600000
+debug.sf.frame_rate_multiple_threshold=120
+boot.fps=20
+
+# V16 Faster Touch Tweak
+debug.performance.tuning=1
+view.scroll_friction=0
+windowsmgr.support_low_latency_touch=true
+debug.hwui.render_dirty_regions=false
+debug.hwui.disable_vsync=true
+haptic_feedback_intensity=50
+tactile_feedback_enabled=1
+windowsmgr.max_events_per_sec=90
+debug.egl.hw=1
+video.accelerate.hw=1
+
+#NEWV15
+touch.distance.scale=0.01
+MultitouchSettleInterval=0.01ms
+MultitouchMinDistance=0.01px
+TapInterval=0.1ms
+TapSlop=0.1px
+ro.sys.fw.bservice_enable=true
+ro.sys.fw.bg_apps_limit=4
+ro.sys.fw.bservice_limit=4
+ro.sys.fw.bservice_age=10000
+touch.distance.scale=0.01
+touch.size.scale=0.1
+setprop.persist.touch_move_opt=1
+setprop.persist.touch_vsync_opt=1
+
+#New14 
+touch.size.calibration=diameter
+touch.pressure.calibration=amplitude 
+touch.size.bias=0 
+touch.coverage.calibration=box 
+touch.gestureMode=spots 
+ro.min_pointer_dur=8
+ro.product.multi_touch_enabled=true
+ro.securestorage.knox=false
+security.mdpp=none
+security.mdpp.result=none
+af.resampler.quality=255
+persist.sys.scrollingcache=3
+persist.af.resampler.quality=255
+persist.service.lgospd.enable=0
+persist.service.pcsync.enable=0
+touch.deviceType=touchScreen
+
+#NEWV12
+lowThreshold=0
+highThreshold=0
+VirtualKeyQuietTime=0
+KeyRepeatDelay=0
+KeyRepeatTimeout=0
+highThreshold=0
+debug.boosterorientnosync=1
+persist.service.touch.tpf=30
+ro.sf.delayedtouches=0
+ro.sf.disable_smooth_effect=true
+
+#NEW V11
+persist.sys.touch_distance_scale=0
+persist.sys.view_scroll_friction=0
+persist.sys.multi_touch_enabled=1
+persist.sys.assist_touch_gesture_enabled=0
+persist.sys.maximum_obscuring_opacity_for_touch=0.5
+persist.sys.show_touches=0
+
+#NEW V10
+ro.global.block_untrusted_touches=0
+vsync.disable.fps.limit=1
+table.framerate=120
+min_pointer_dur=8
+
+#NEW V9.0
+ro.system.disable_hwc_delay=1
+ro.system.touch_x_rotation=360
+ro.system.touchswipedeadzone=5
+ro.global.pointer_speed=600
+ro.system.pointer_speed=7
+long_press_timeout=300
+multi_press_timeout=300
+ro.secure.touch_size_scale=5
+ro.secure.show_rotation_suggestions=0
+ro.secure.touch_size_bias=5
+ro.secure.touch_exploration_enabled=1
+ro.secure.touch_orientation_aware=1
+ro.secure.touch_pressure_scale=0.00000125
+ro.secure.touch_distance_scale=0
+
+# Fast Sensitivity in Game
+ro.config.stune_background_boost=20
+ro.config.stune_background_prefer_idle=0
+ro.config.stune_background_colocate=0
+ro.config.stune_background_sched_boost_enabled=0
+ro.config.stune_foreground_boost=20
+ro.config.stune_foreground_prefer_idle=0
+ro.config.stune_foreground_colocate=0
+ro.config.stune_foreground_sched_boost_enabled=0
+ro.config.stune_rt_boost=20
+ro.config.stune_rt_prefer_idle=0
+ro.config.stune_rt_colocate=0
+ro.config.stune_rt_sched_boost_enabled=0
+
+#GameMode
+ro.vendor.touchfeature.gamemode.enable=true
+r.setframepace=120
+
+#Gaming Touch 
+touchscreen_sensitivity=10
+touchscreen_min_press_time=50
+touchscreen_hevoring=0
+touchscreen_gesture_mode=1
+touchscreen_pointer_speed=15
+touchscreen_pressure_calibration=1023
+touchscreen_sensitivity_mode=3
+touchscreen_threshold=9
+touchscreen_sensitivity_threshold=9
+touchscreen_double_tap_speed=75
+touchscreen_long_press_timeout=300
+touchscreen_sensitivity_scale=1.5
+
+# Repair Touch
+persist.sys.use_dithering=0
+persist.sys.use_dithering=false
+
+#Xtrimespeed
+DragMinSwitchSpeed=99999.0px/s
+SwipeMaxWidthRatio=1
+ZoomSpeedRatio=1
+SwipeTransitionAngleCosine=3.6
+PointerVelocityControlParameters=1
+
+#MovementGaming
+persist.vendor.qti.inputopts.enable=true
+persist.vendor.qti.inputopts.movetouchslop=0.5
+
+# Touch improve
+touch.orientationAware=1
+SurfaceOrientation=auto
+touch.size.isSummed=1
+touch.orientation.calibration=none
+touch.distance.calibration=none
+QuietInterval=0ms
+MovementSpeedRatio=auto
+persist.dev.pm.dyn_samplingrate=9999999999999999999999999999
+scroll.accelerated.hw=true
+persist.sys.ui.hwframes=9999999999999999999999999999
+persist.sys.force_high_end_gfx=1
+ro.product.max_num_touch=30
+ro.window.animation.scale=0.88
+ro.transition.animation.scale=0.88
+view.touch_slop=0dp
+windowsmgr.maxeventspersec=9999999999999999999999999999
+
+#Improve global touch screen response
+window_animation_scale=0.3
+transition_animation_scale=0.3
+animator_duration_scale=0.3
+multi_press_timeout=300
+long_press_timeout=300
 # End of File
