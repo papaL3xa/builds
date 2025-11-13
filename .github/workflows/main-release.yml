@@ -15,7 +15,7 @@ on:
       branch:
         description: 'BatAxeKernel Branch'
         required: true
-        default: 'y' 
+        default: 'main'  # ✅ Diubah dari 'y' ke 'main'
       ksun:
         description: 'Install KernelSU-Next ?'
         required: true
@@ -87,7 +87,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: papaL3xa/BatAxeKernel
-          ref: ${{ github.event.inputs.branch }}  # atau branch yang sesuai
+          ref: ${{ github.event.inputs.branch }}
           token: ${{ secrets.GITHUB_TOKEN }}
           path: kernel-source
 
@@ -106,6 +106,7 @@ jobs:
           echo "BUILD_DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
           echo "COMMIT_SHA=$SHA" >> $GITHUB_ENV
           echo "BUILD_KERNEL_VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+          echo "KERNEL_BRANCH=${{ github.event.inputs.branch }}" >> $GITHUB_ENV
      
       - name: ⚙️ Setting Permission for build.sh
         run: |
@@ -115,14 +116,31 @@ jobs:
       - name: 🏇🏻 Building Kernel
         run: |
           cd kernel-source
+          echo "Building for device: ${{ matrix.device }}"
+          echo "Version: ${{ env.BUILD_KERNEL_VERSION }}"
+          echo "KernelSU: ${{ github.event.inputs.ksun }}"
+          echo "Clang: ${{ github.event.inputs.llvm }}"
+          echo "Release: ${{ github.event.inputs.release }}"
           bash build.sh -m ${{ matrix.device }} -v ${{ env.BUILD_KERNEL_VERSION }} -k ${{ github.event.inputs.ksun }} -l ${{ github.event.inputs.llvm }} -r ${{ github.event.inputs.release }}
+
+      - name: 🔍 Check Build Output
+        run: |
+          echo "Checking build output directory..."
+          cd kernel-source
+          find . -name "*.zip" -type f | head -10
+          ls -la build/ || echo "No build directory"
+          ls -la build/export/ 2>/dev/null || echo "No export directory"
+          ls -la build/out/ 2>/dev/null || echo "No out directory"
 
       - name: 🧩 Upload Kernel
         uses: actions/upload-artifact@v4
         with:
           name: "BatAxeKernel-${{ env.BUILD_KERNEL_VERSION }}-${{ env.BUILD_DATE }}-${{ matrix.device }}-Clang${{ github.event.inputs.llvm }}"
-          path: "kernel-source/build/export/*.zip"
-          if-no-files-found: error
+          path: |
+            kernel-source/build/export/*.zip
+            kernel-source/build/out/*/zip/*.zip
+            kernel-source/*.zip
+          if-no-files-found: warn
 
   release:
     needs: build
@@ -136,6 +154,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
+          pattern: BatAxeKernel-*
+          merge-multiple: true
 
       - name: List Artifact Files
         id: list-files
@@ -143,6 +163,7 @@ jobs:
           echo "Listing all artifact files:"
           find artifacts -name "*.zip" -type f | while read file; do
             echo "Found: $file"
+            ls -la "$file"
           done
           # Count devices and set output
           DEVICE_COUNT=$(find artifacts -name "*.zip" -type f | wc -l)
@@ -164,14 +185,15 @@ jobs:
           
           # Buat release body dengan format yang benar
           cat << EOF > release_body.md
-          # 🚀 BatAxeKernel KSUN ${{ github.event.inputs.version }} for OneUI 4.X - Release
+          # 🚀 BatAxeKernel ${{ github.event.inputs.version }} for OneUI 4.X - Release
 
           ## ⚙️ Build Information:
           - **Kernel Version:** ${{ github.event.inputs.version }}
           - **Build Date:** $(date +'%Y-%m-%d')
+          - **Source Branch:** ${{ github.event.inputs.branch }}
           - **Toolchain:** Clang ${{ github.event.inputs.llvm }}
           - **KernelSU Next:** ${{ github.event.inputs.ksun }}
-          - **KernelSU Next Version:** ${{ github.event.inputs.ksunvers }}
+          - **KernelSU Version:** ${{ github.event.inputs.ksunvers }}
           - **SUFS Version:** ${{ github.event.inputs.susfsvers }}
 
           ## 📱 Supported Devices:
@@ -208,6 +230,7 @@ jobs:
           cat devices.txt 2>/dev/null || echo "No devices file"
 
       - name: 🚀 Release Build Kernel
+        if: ${{ github.event.inputs.release == 'y' }}
         id: create_release
         uses: ncipollo/release-action@v1
         with:
@@ -222,12 +245,13 @@ jobs:
           artifacts: "artifacts/**/*.zip"
 
       - name: Cleanup Artifacts
+        if: ${{ github.event.inputs.release == 'y' }}
         uses: geekyeggo/delete-artifact@v5
         with:
           name: "BatAxeKernel-*"
 
       - name: 📱 Send Telegram Notification
-        if: success()
+        if: success() && github.event.inputs.release == 'y'
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_CHAT_ID || github.event.inputs.telegram_chat_id }}
@@ -237,6 +261,7 @@ jobs:
             
             📊 *Build Information:*
             ⚙️ *Version:* ${{ github.event.inputs.version }}
+            🌿 *Branch:* ${{ github.event.inputs.branch }}
             🔧 *Toolchain:* Clang ${{ github.event.inputs.llvm }}
             🛠️ *KernelSU:* ${{ github.event.inputs.ksun }}
             📱 *Devices Built:* ${{ steps.list-files.outputs.device_count }}
@@ -272,6 +297,7 @@ jobs:
             
             📊 *Build Information:*
             ⚙️ *Version:* ${{ github.event.inputs.version }}
+            🌿 *Branch:* ${{ github.event.inputs.branch }}
             🔧 *Toolchain:* Clang ${{ github.event.inputs.llvm }}
             🛠️ *KernelSU:* ${{ github.event.inputs.ksun }}
             📅 *Build Date:* $(date +'%Y-%m-%d %H:%M')
