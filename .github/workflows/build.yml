@@ -8,6 +8,10 @@ on:
         description: 'Kernel Version'
         required: true
         default: ''
+      branch:
+        description: 'BatAxeKernel Branch'
+        required: true
+        default: 'y'
       ksun:
         description: 'Install KernelSU-Next ?'
         required: true
@@ -58,7 +62,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: papaL3xa/BatAxeKernel
-          ref: newone  # atau branch yang sesuai
+          ref: ${{ github.event.inputs.branch }}  # atau branch yang sesuai
           token: ${{ secrets.GITHUB_TOKEN }}
           path: kernel-source
 
