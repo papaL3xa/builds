@@ -12,7 +12,7 @@ on:
         description: 'Release Tag'
         required: true
         default: 'v'  
-      branch:
+      cabang:
         description: 'BatAxeKernel Branch'
         required: true
         default: ''
@@ -95,7 +95,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: papaL3xa/BatAxeKernel
-          ref: ${{ github.event.inputs.branch }}  # atau branch yang sesuai
+          ref: ${{ github.event.inputs.cabang }}  # atau branch yang sesuai
           ssh-key: ${{ github.event.inputs.token != '' && github.event.inputs.token || '' }}
           token: ${{ github.event.inputs.token != '' && github.event.inputs.token || github.token }}
           path: BatAxeKernel-repo
