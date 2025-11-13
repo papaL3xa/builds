@@ -15,13 +15,8 @@ on:
       branch:
         description: 'Branch to build'
         required: true
-        default: 'main'
-        type: choice
-        options:
-        - main
-        - development
-        - master
-        - staging
+        default: 'newone'
+        type: string
       clean_build:
         description: 'Clean build'
         required: false
@@ -66,7 +61,7 @@ jobs:
       run: |
         cd builds-repo
         ./build.sh \
-          --branch "${{ github.event.inputs.branch || 'main' }}" \
+          --branch "${{ github.event.inputs.branch || 'newone' }}" \
           ${{ github.event.inputs.clean_build && '--clean' || '' }} \
           ${{ github.event.inputs.skip_install && '--no-install' || '' }}
       env:
