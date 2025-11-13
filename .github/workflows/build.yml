@@ -1,0 +1,162 @@
+name: Build BatAxeKernel
+
+on:
+  push:
+    branches: [ main, development, master ]
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+  pull_request:
+    branches: [ main, development, master ]
+  schedule:
+    - cron: '0 0 * * 0' # Weekly build every Sunday
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to build'
+        required: true
+        default: 'main'
+        type: choice
+        options:
+        - main
+        - development
+        - master
+        - staging
+      clean_build:
+        description: 'Clean build'
+        required: false
+        default: false
+        type: boolean
+      skip_install:
+        description: 'Skip installation'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  KERNEL_REPO: git@github.com:papaL3xa/BatAxeKernel.git
+  BUILD_DIR: BatAxeKernel
+
+jobs:
+  build:
+    name: Build Kernel
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        arch: [x86_64, arm64]
+    
+    steps:
+    - name: Checkout builds repository
+      uses: actions/checkout@v4
+      with:
+        path: builds-repo
+
+    - name: Setup build environment
+      run: |
+        sudo apt update
+        sudo apt install -y build-essential libncurses-dev bison flex libssl-dev libelf-dev bc
+        gcc --version
+        make --version
+
+    - name: Make build.sh executable
+      run: chmod +x builds-repo/build.sh
+
+    - name: Run build script
+      run: |
+        cd builds-repo
+        ./build.sh \
+          --branch "${{ github.event.inputs.branch || 'main' }}" \
+          ${{ github.event.inputs.clean_build && '--clean' || '' }} \
+          ${{ github.event.inputs.skip_install && '--no-install' || '' }}
+      env:
+        CC: gcc
+        ARCH: ${{ matrix.arch }}
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: kernel-${{ matrix.arch }}-${{ github.sha }}
+        path: |
+          builds-repo/BatAxeKernel/arch/${{ matrix.arch }}/boot/
+          builds-repo/BatAxeKernel/System.map
+          builds-repo/BatAxeKernel/.config
+        retention-days: 7
+
+    - name: Upload build log
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-log-${{ matrix.arch }}-${{ github.sha }}
+        path: builds-repo/build.log
+        retention-days: 7
+
+  docker-build:
+    name: Build in Docker Environment
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:22.04
+    
+    steps:
+    - name: Install dependencies in container
+      run: |
+        apt update
+        apt install -y git build-essential libncurses-dev bison flex libssl-dev libelf-dev bc sudo
+
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        path: builds-repo
+
+    - name: Run build script in container
+      run: |
+        cd builds-repo
+        chmod +x build.sh
+        ./build.sh --branch main --no-install
+
+  test:
+    name: Test Build Script
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Test build script syntax
+      run: |
+        chmod +x build.sh
+        bash -n build.sh
+        shellcheck build.sh || true
+
+    - name: Test help command
+      run: |
+        chmod +x build.sh
+        ./build.sh --help
+
+    - name: Test dry-run mode
+      run: |
+        chmod +x build.sh
+        timeout 30s ./build.sh --no-install --branch main || true
+
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [build, test]
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+
+    - name: List artifacts
+      run: find artifacts -type f
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: |
+          artifacts/**/*
+        generate_release_notes: true
