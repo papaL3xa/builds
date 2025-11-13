@@ -1,4 +1,0 @@
-# Kernel build helper tools (optional)
-colorama==0.4.6
-requests==2.31.0
-pyyaml==6.0.1
