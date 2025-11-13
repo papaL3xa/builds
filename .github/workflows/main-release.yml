@@ -1,4 +1,4 @@
-name: Build BatAxeKernel(Release-Post Github)
+name: Build (Release-Post Github) - External Repo
 run-name: 'Release: Build ${{ github.event.inputs.version }} with CLANG-${{ github.event.inputs.llvm }}'
 
 on:
@@ -11,11 +11,11 @@ on:
       tag:
         description: 'Release Tag'
         required: true
-        default: 'v' 
+        default: 'v'  
       branch:
         description: 'BatAxeKernel Branch'
         required: true
-        default: 'main'  # ✅ Diubah dari 'y' ke 'main'
+        default: ''
       ksun:
         description: 'Install KernelSU-Next ?'
         required: true
@@ -83,13 +83,27 @@ jobs:
         device: [d1, d1xks, d2s, d2x, beyond0lte, beyond1lte, beyond2lte, beyondx]
 
     steps:
-      - name: 📀 Checkout Kernel Repository
+      - name: 🔑 Setup SSH Key (Optional)
+        if: ${{ github.event.inputs.token != '' }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ github.event.inputs.token }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+      - name: 📀 Checkout External Repository
         uses: actions/checkout@v4
         with:
           repository: papaL3xa/BatAxeKernel
-          ref: ${{ github.event.inputs.branch }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-          path: kernel-source
+          ref: ${{ github.event.inputs.branch }}  # atau branch yang sesuai
+          ssh-key: ${{ github.event.inputs.token != '' && github.event.inputs.token || '' }}
+          token: ${{ github.event.inputs.token != '' && github.event.inputs.token || github.token }}
+          path: BatAxeKernel-repo
+
+      - name: 📀 Checkout Current Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
       - name: ⏰ Set Time Zone
         run: |
@@ -97,50 +111,34 @@ jobs:
 
       - name: 🪡 Setup Build Environment
         run: |
-          sudo apt update && sudo apt upgrade -y && sudo apt install --no-install-recommends -y build-essential gcc-aarch64-linux-gnu clang lld llvm curl jq
+          sudo apt update && sudo apt upgrade -y && sudo apt install --no-install-recommends -y build-essential gcc-aarch64-linux-gnu clang lld llvm curl jq git
           
       - name: 💼 Set Environment Variable
         run: |
-          cd kernel-source
-          SHA=$(git rev-parse --short HEAD)
+          SHA=$(git rev-parse --short ${{ github.sha }})
           echo "BUILD_DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
           echo "COMMIT_SHA=$SHA" >> $GITHUB_ENV
           echo "BUILD_KERNEL_VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
-          echo "KERNEL_BRANCH=${{ github.event.inputs.branch }}" >> $GITHUB_ENV
      
-      - name: ⚙️ Setting Permission for build.sh
+      - name: 📂 Copy build.sh from External Repo
         run: |
-          cd kernel-source
-          chmod +x build.sh
+          cp BatAxeKernel-repo/build.sh ./
+          ls -la build.sh
+          echo "Build script copied from external repository"
+        
+      - name: ⚙️ Setting Permission
+        run: chmod +x build.sh
         
       - name: 🏇🏻 Building Kernel
         run: |
-          cd kernel-source
-          echo "Building for device: ${{ matrix.device }}"
-          echo "Version: ${{ env.BUILD_KERNEL_VERSION }}"
-          echo "KernelSU: ${{ github.event.inputs.ksun }}"
-          echo "Clang: ${{ github.event.inputs.llvm }}"
-          echo "Release: ${{ github.event.inputs.release }}"
           bash build.sh -m ${{ matrix.device }} -v ${{ env.BUILD_KERNEL_VERSION }} -k ${{ github.event.inputs.ksun }} -l ${{ github.event.inputs.llvm }} -r ${{ github.event.inputs.release }}
-
-      - name: 🔍 Check Build Output
-        run: |
-          echo "Checking build output directory..."
-          cd kernel-source
-          find . -name "*.zip" -type f | head -10
-          ls -la build/ || echo "No build directory"
-          ls -la build/export/ 2>/dev/null || echo "No export directory"
-          ls -la build/out/ 2>/dev/null || echo "No out directory"
 
       - name: 🧩 Upload Kernel
         uses: actions/upload-artifact@v4
         with:
           name: "BatAxeKernel-${{ env.BUILD_KERNEL_VERSION }}-${{ env.BUILD_DATE }}-${{ matrix.device }}-Clang${{ github.event.inputs.llvm }}"
-          path: |
-            kernel-source/build/export/*.zip
-            kernel-source/build/out/*/zip/*.zip
-            kernel-source/*.zip
-          if-no-files-found: warn
+          path: "build/export/*.zip"
+          if-no-files-found: error
 
   release:
     needs: build
@@ -154,8 +152,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
-          pattern: BatAxeKernel-*
-          merge-multiple: true
 
       - name: List Artifact Files
         id: list-files
@@ -163,7 +159,6 @@ jobs:
           echo "Listing all artifact files:"
           find artifacts -name "*.zip" -type f | while read file; do
             echo "Found: $file"
-            ls -la "$file"
           done
           # Count devices and set output
           DEVICE_COUNT=$(find artifacts -name "*.zip" -type f | wc -l)
@@ -185,16 +180,16 @@ jobs:
           
           # Buat release body dengan format yang benar
           cat << EOF > release_body.md
-          # 🚀 BatAxeKernel ${{ github.event.inputs.version }} for OneUI 4.X - Release
+          # 🚀 BatAxeKernel KSUN ${{ github.event.inputs.version }} for OneUI 4.X - Release
 
           ## ⚙️ Build Information:
           - **Kernel Version:** ${{ github.event.inputs.version }}
           - **Build Date:** $(date +'%Y-%m-%d')
-          - **Source Branch:** ${{ github.event.inputs.branch }}
           - **Toolchain:** Clang ${{ github.event.inputs.llvm }}
           - **KernelSU Next:** ${{ github.event.inputs.ksun }}
-          - **KernelSU Version:** ${{ github.event.inputs.ksunvers }}
+          - **KernelSU Next Version:** ${{ github.event.inputs.ksunvers }}
           - **SUFS Version:** ${{ github.event.inputs.susfsvers }}
+          - **Source Repository:** [papaL3xa/BatAxeKernel](https://github.com/papaL3xa/BatAxeKernel)
 
           ## 📱 Supported Devices:
           $DEVICES_LIST
@@ -230,7 +225,6 @@ jobs:
           cat devices.txt 2>/dev/null || echo "No devices file"
 
       - name: 🚀 Release Build Kernel
-        if: ${{ github.event.inputs.release == 'y' }}
         id: create_release
         uses: ncipollo/release-action@v1
         with:
@@ -245,13 +239,12 @@ jobs:
           artifacts: "artifacts/**/*.zip"
 
       - name: Cleanup Artifacts
-        if: ${{ github.event.inputs.release == 'y' }}
         uses: geekyeggo/delete-artifact@v5
         with:
           name: "BatAxeKernel-*"
 
       - name: 📱 Send Telegram Notification
-        if: success() && github.event.inputs.release == 'y'
+        if: success()
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_CHAT_ID || github.event.inputs.telegram_chat_id }}
@@ -261,11 +254,11 @@ jobs:
             
             📊 *Build Information:*
             ⚙️ *Version:* ${{ github.event.inputs.version }}
-            🌿 *Branch:* ${{ github.event.inputs.branch }}
             🔧 *Toolchain:* Clang ${{ github.event.inputs.llvm }}
             🛠️ *KernelSU:* ${{ github.event.inputs.ksun }}
             📱 *Devices Built:* ${{ steps.list-files.outputs.device_count }}
             📅 *Build Date:* $(date +'%Y-%m-%d %H:%M')
+            📂 *Source:* [papaL3xa/BatAxeKernel](https://github.com/papaL3xa/BatAxeKernel)
             ✅ *Status:* ✅ SUCCESS
             
             📥 *Download Links:*
@@ -297,10 +290,10 @@ jobs:
             
             📊 *Build Information:*
             ⚙️ *Version:* ${{ github.event.inputs.version }}
-            🌿 *Branch:* ${{ github.event.inputs.branch }}
             🔧 *Toolchain:* Clang ${{ github.event.inputs.llvm }}
             🛠️ *KernelSU:* ${{ github.event.inputs.ksun }}
             📅 *Build Date:* $(date +'%Y-%m-%d %H:%M')
+            📂 *Source:* [papaL3xa/BatAxeKernel](https://github.com/papaL3xa/BatAxeKernel)
             ❌ *Status:* ❌ FAILED
             
             🔍 *Troubleshooting:*

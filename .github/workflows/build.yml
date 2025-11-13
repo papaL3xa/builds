@@ -11,7 +11,7 @@ on:
       branch:
         description: 'BatAxeKernel Branch'
         required: true
-        default: 'y'
+        default: ''
       ksun:
         description: 'Install KernelSU-Next ?'
         required: true
