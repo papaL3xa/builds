@@ -1,157 +1,95 @@
-name: Build BatAxeKernel
+name: Build-Test-BatAxeKernel
+run-name: 'CI: Build ${{ github.event.inputs.version }} for device ${{ github.event.inputs.devices }} With Clang ${{ github.event.inputs.llvm }}'
 
 on:
-  push:
-    branches: [ main, development, master ]
-    paths-ignore:
-      - 'README.md'
-      - 'docs/**'
-  pull_request:
-    branches: [ main, development, master ]
-  schedule:
-    - cron: '0 0 * * 0' # Weekly build every Sunday
   workflow_dispatch:
     inputs:
-      branch:
-        description: 'Branch to build'
+      version:
+        description: 'Kernel Version'
         required: true
-        default: 'newone'
-        type: string
-      clean_build:
-        description: 'Clean build'
-        required: false
-        default: false
-        type: boolean
-      skip_install:
-        description: 'Skip installation'
-        required: false
-        default: false
-        type: boolean
-
-env:
-  KERNEL_REPO: git@github.com:papaL3xa/BatAxeKernel.git
-  BUILD_DIR: BatAxeKernel
+        default: ''
+      ksun:
+        description: 'Install KernelSU-Next ?'
+        required: true
+        default: 'y'
+      llvm:
+        description: 'Clang (12-18) (19-21:Potential bootloop on A12) or Neutron (10032024) Version'
+        required: true
+        default: '10032024'
+        type: choice
+        options:
+          - '12'
+          - '13'
+          - '14'
+          - '15'
+          - '16'
+          - '17'
+          - '18'
+          - '19'
+          - '20'
+          - '21'
+          - '10032024'
+      devices:
+        description: 'Devices'
+        required: true
+        default: '["d1"]'
+        type: choice
+        options: 
+          - ["d1"]
+          - ["d1xks"]
+          - ["d2s"]
+          - ["d2x"]
+          - ["beyond0lte"]
+          - ["beyond1lte"]
+          - ["beyond2lte"]
+          - ["beyondx"]
 
 jobs:
   build:
-    name: Build Kernel
     runs-on: ubuntu-latest
-    
+    permissions:
+      contents: write
     strategy:
       matrix:
-        arch: [x86_64, arm64]
-    
+        device: ${{ fromJSON(github.event.inputs.devices) }}
+
     steps:
-    - name: Checkout builds repository
-      uses: actions/checkout@v4
-      with:
-        path: builds-repo
+      - name: 📀 Checkout Kernel Repository
+        uses: actions/checkout@v4
+        with:
+          repository: papaL3xa/BatAxeKernel
+          ref: newone  # atau branch yang sesuai
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: kernel-source
 
-    - name: Setup build environment
-      run: |
-        sudo apt update
-        sudo apt install -y build-essential libncurses-dev bison flex libssl-dev libelf-dev bc
-        gcc --version
-        make --version
+      - name: ⏰ Set Time Zone
+        run: |
+          sudo timedatectl set-timezone Asia/Jakarta 
 
-    - name: Make build.sh executable
-      run: chmod +x builds-repo/build.sh
+      - name: 🪡 Setup Build Environment
+        run: |
+          sudo apt update && sudo apt upgrade -y && sudo apt install --no-install-recommends -y build-essential gcc-aarch64-linux-gnu clang lld llvm
+          
+      - name: 💼 Set Environment Variable
+        run: |
+          cd kernel-source
+          SHA=$(git rev-parse --short ${{ github.sha }})
+          echo BUILD_DATE=$(date +'%Y%m%d') >> $GITHUB_ENV
+          echo BUILD_KERNEL_VERSION=CI-${{ github.event.inputs.version }}-$SHA >> $GITHUB_ENV
 
-    - name: Run build script
-      run: |
-        cd builds-repo
-        ./build.sh \
-          --branch "${{ github.event.inputs.branch || 'newone' }}" \
-          ${{ github.event.inputs.clean_build && '--clean' || '' }} \
-          ${{ github.event.inputs.skip_install && '--no-install' || '' }}
-      env:
-        CC: gcc
-        ARCH: ${{ matrix.arch }}
+      - name: ⚙️ Setting permission for build.sh
+        run: |
+          cd kernel-source
+          chmod +x build.sh
 
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: kernel-${{ matrix.arch }}-${{ github.sha }}
-        path: |
-          builds-repo/BatAxeKernel/arch/${{ matrix.arch }}/boot/
-          builds-repo/BatAxeKernel/System.map
-          builds-repo/BatAxeKernel/.config
-        retention-days: 7
+      - name: 🏇🏻 Building Kernel
+        run: |
+          cd kernel-source
+          bash build.sh -m ${{ matrix.device }} -v ${{ env.BUILD_KERNEL_VERSION }} -k ${{ github.event.inputs.ksun }} -l ${{ github.event.inputs.llvm }} -r n
 
-    - name: Upload build log
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-log-${{ matrix.arch }}-${{ github.sha }}
-        path: builds-repo/build.log
-        retention-days: 7
-
-  docker-build:
-    name: Build in Docker Environment
-    runs-on: ubuntu-latest
-    container:
-      image: ubuntu:22.04
-    
-    steps:
-    - name: Install dependencies in container
-      run: |
-        apt update
-        apt install -y git build-essential libncurses-dev bison flex libssl-dev libelf-dev bc sudo
-
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        path: builds-repo
-
-    - name: Run build script in container
-      run: |
-        cd builds-repo
-        chmod +x build.sh
-        ./build.sh --branch main --no-install
-
-  test:
-    name: Test Build Script
-    runs-on: ubuntu-latest
-    needs: build
-    
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Test build script syntax
-      run: |
-        chmod +x build.sh
-        bash -n build.sh
-        shellcheck build.sh || true
-
-    - name: Test help command
-      run: |
-        chmod +x build.sh
-        ./build.sh --help
-
-    - name: Test dry-run mode
-      run: |
-        chmod +x build.sh
-        timeout 30s ./build.sh --no-install --branch main || true
-
-  release:
-    name: Create Release
-    runs-on: ubuntu-latest
-    needs: [build, test]
-    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
-    
-    steps:
-    - name: Download all artifacts
-      uses: actions/download-artifact@v4
-      with:
-        path: artifacts
-
-    - name: List artifacts
-      run: find artifacts -type f
-
-    - name: Create Release
-      uses: softprops/action-gh-release@v1
-      if: startsWith(github.ref, 'refs/tags/')
-      with:
-        files: |
-          artifacts/**/*
-        generate_release_notes: true
+      - name: 🧩 Upload Kernel
+        uses: actions/upload-artifact@v4
+        with:
+          name: "BatAxeKernel-${{ env.BUILD_KERNEL_VERSION }}-${{ env.BUILD_DATE }}-${{ matrix.device }}-Clang${{ github.event.inputs.llvm }}"
+          path: "kernel-source/build/out/${{ matrix.device }}/zip/*"
+          if-no-files-found: error
